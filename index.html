@@ -207,15 +207,33 @@ input,select,button,textarea{ font-family:inherit; font-size:14px; color:var(--t
 .saved-empty{ font-size:12.5px; color:var(--text-faint); }
 
 .copy-feedback{ font-size:11.5px; color:var(--good); margin-top:6px; min-height:14px; }
+
+.app-nav{ display:flex; gap:8px; margin:0 0 16px; padding:6px; background:var(--surface); border:1px solid var(--border); border-radius:999px; box-shadow:var(--shadow); width:fit-content; max-width:100%; }
+.app-tab{ border:none; background:transparent; border-radius:999px; padding:10px 20px; font-size:14px; font-weight:600; color:var(--text-muted); cursor:pointer; white-space:nowrap; }
+.app-tab:hover{ color:var(--text); }
+.app-tab.active{ background:var(--navy); color:#F4F1E6; }
+@media (max-width:520px){ .app-nav{ width:100%; } .app-tab{ flex:1; padding:10px 8px; font-size:13px; } }
+.view[hidden]{ display:none; }
+#view-indiv .line-fields{ grid-template-columns: repeat(6, minmax(0,1fr)); }
+#view-indiv .lf input, #view-indiv .lf select{ width:100%; min-width:0; }
+@media (max-width:760px){ #view-indiv .line-fields{ grid-template-columns: repeat(3, minmax(0,1fr)); } }
+@media (max-width:460px){ #view-indiv .line-fields{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
+.hint-box{ font-size:12px; color:var(--text-muted); background:var(--surface-2); border:1px dashed var(--border-strong); border-radius:var(--radius-md); padding:10px 12px; margin-top:12px; line-height:1.45; }
 </style>
 
 <div class="page">
   <header class="hero">
     <div class="hero-brand">A4P <span>MENTAL</span></div>
-    <h1>Simulateur de tarification — clubs sportifs</h1>
-    <p class="hero-sub">Le catalogue est au plein tarif (niveau élite / pro international). Tout club en dessous bénéficie d'une remise dégressive selon son niveau et sa taille. Ton temps et tes compétences restent facturés à l'heure (125-200 €), les outils BIPM au barème dégressif selon le nombre de personnes testées.</p>
+    <h1 id="heroTitle">Simulateur de tarification — clubs sportifs</h1>
+    <p class="hero-sub" id="heroSub">Le catalogue est au plein tarif (niveau élite / pro international). Tout club en dessous bénéficie d'une remise dégressive selon son niveau et sa taille. Ton temps et tes compétences restent facturés à l'heure (125-200 €), les outils BIPM au barème dégressif selon le nombre de personnes testées.</p>
   </header>
 
+  <nav class="app-nav" role="tablist" aria-label="Choix du simulateur">
+    <button type="button" class="app-tab active" data-view="club" role="tab" aria-selected="true">Simulateur club</button>
+    <button type="button" class="app-tab" data-view="indiv" role="tab" aria-selected="false">Simulateur individuel</button>
+  </nav>
+
+  <div id="view-club" class="view">
   <div class="layout">
     <section class="builder">
 
@@ -331,6 +349,114 @@ input,select,button,textarea{ font-family:inherit; font-size:14px; color:var(--t
         <div id="savedList"></div>
       </div>
     </aside>
+  </div>
+  </div>
+
+  <div id="view-indiv" class="view" hidden>
+  <div class="layout">
+    <section class="builder">
+
+      <div class="panel">
+        <span class="example-flag">Exemple pré-rempli — à modifier librement</span>
+        <h2>Contexte de l'accompagnement</h2>
+        <p class="panel-note">Le catalogue est au plein tarif (sportif professionnel). Le profil du sportif applique une remise en dessous. Les outils BIPM sont facturés à la personne testée.</p>
+        <div class="context-grid">
+          <div class="field">
+            <label for="iClient">Sportif / dossier</label>
+            <input id="iClient" type="text" value="Exemple — Sportif, Fédérale 1">
+          </div>
+          <div class="field">
+            <label for="iSport">Sport et poste</label>
+            <input id="iSport" type="text" value="Rugby — talonneur">
+          </div>
+          <div class="field">
+            <label for="iProfil">Profil du sportif</label>
+            <select id="iProfil"></select>
+          </div>
+          <div class="field">
+            <label for="iFacture">Facturé à (si différent du sportif)</label>
+            <input id="iFacture" type="text" placeholder="ex : parents, club, structure">
+            <span class="field-hint">Apparaît sur le devis PDF.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Partir d'un format</h2>
+        <p class="panel-note">Charge une composition type dans le devis — reste entièrement modifiable ligne par ligne ensuite.</p>
+        <div class="pack-cards" id="iPackCards"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Ajouter une prestation</h2>
+        <p class="panel-note">Clique pour ajouter une ligne au devis.</p>
+        <div id="iAddPalette"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Détail du devis</h2>
+        <div id="iLinesWrap" class="lines-wrap"></div>
+
+        <details class="tariffs-details">
+          <summary>Modifier mes tarifs de référence</summary>
+          <div id="iTariffEditor"></div>
+          <button id="iResetTariffs" class="btn-ghost small" type="button">Réinitialiser les tarifs par défaut</button>
+        </details>
+      </div>
+    </section>
+
+    <aside class="summary">
+      <div class="panel summary-sticky">
+        <h2>Récapitulatif</h2>
+        <div class="summary-lines" id="iSummaryLines"></div>
+
+        <div id="iBucketBreakdown"></div>
+
+        <div class="summary-row"><span>Sous-total prestations (plein tarif)</span><strong id="iSumBrut" class="num"></strong></div>
+        <div class="summary-row"><span>Remise profil (<span id="iProfilPct"></span>)</span><strong id="iSumProfil" class="num"></strong></div>
+        <div class="summary-row remise-row">
+          <span>Remise commerciale</span>
+          <span class="remise-input-group">
+            <input id="iRemise" type="number" min="0" value="0">
+            <select id="iRemiseType">
+              <option value="pct">%</option>
+              <option value="eur">€</option>
+            </select>
+          </span>
+        </div>
+        <div class="summary-row remise-amount-row" id="iRemiseAmountRow" hidden><span>Montant de la remise</span><strong id="iSumRemise" class="num"></strong></div>
+        <p class="remise-hint">Règle A4P : jamais de remise sèche sans contrepartie — préférer un paiement étalé, un témoignage ou un statut de référence.</p>
+
+        <div class="summary-total">
+          <span>Total à facturer</span>
+          <strong id="iSumTotal" class="num"></strong>
+        </div>
+
+        <h2 style="font-size:14px;margin-bottom:8px;">Plan de paiement</h2>
+        <div class="plan-tabs" id="iPlanTabs"></div>
+        <div id="iPlanMoisWrap" class="plan-mois" hidden>Sur <input id="iPlanMois" type="number" min="2" value="3"> mois</div>
+        <div class="plan-detail" id="iPlanDetail"></div>
+
+        <div class="actions">
+          <button id="iEditDevis" class="btn-primary" type="button">Éditer le devis (PDF)</button>
+        </div>
+        <div class="actions">
+          <button id="iCopySummary" class="btn-ghost" type="button">Copier le récapitulatif</button>
+        </div>
+        <div class="copy-feedback" id="iCopyFeedback"></div>
+
+        <input id="iSaveName" class="save-name" type="text" placeholder="Nom du devis à enregistrer">
+        <div class="actions">
+          <button id="iSaveQuote" class="btn-primary" type="button">Enregistrer ce devis</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 style="font-size:15px;">Devis individuels enregistrés</h2>
+        <div id="iSavedList"></div>
+      </div>
+    </aside>
+  </div>
   </div>
 </div>
 
@@ -1535,8 +1661,917 @@ input,select,button,textarea{ font-family:inherit; font-size:14px; color:var(--t
     setTimeout(function(){ document.body.removeChild(ta); }, 4000);
   }
 
+  window.A4P_SHARED = {
+    fmtEUR:fmtEUR, fmtH:fmtH, pdfFmtEUR:pdfFmtEUR, pdfDrawHeader:pdfDrawHeader, pdfDrawFooter:pdfDrawFooter,
+    offerPdfDownload:offerPdfDownload, safeFileName:safeFileName, fallbackSelect:fallbackSelect,
+    pdf:{ M:PDF_M, BAND:PDF_BAND, BOTTOM:PDF_CONTENT_BOTTOM, W:PDF_W, RIGHT:PDF_RIGHT, LABEL_X:PDF_COL_LABEL_X, LABEL_W:PDF_COL_LABEL_W,
+          QTY_X:PDF_COL_QTY_X, AMT_RIGHT:PDF_COL_AMT_RIGHT, NAVY:PDF_NAVY, AMBER:PDF_AMBER, AMBER_DEEP:PDF_AMBER_DEEP,
+          INK:PDF_INK, MUTED:PDF_MUTED, FAINT:PDF_FAINT, LINE:PDF_LINE }
+  };
+
   loadStorage();
   wireStaticInputs();
+  applyPack('saison');
+  renderSavedQuotes();
+})();
+</script>
+<script>
+(function(){
+  "use strict";
+  var S = window.A4P_SHARED;
+  var fmtEUR = S ? S.fmtEUR : function(n){ return Math.round(n||0).toLocaleString('fr-FR') + ' €'; };
+
+  /* ================= Navigation entre les deux simulateurs ================= */
+  var VIEW_KEY = 'a4p_active_view_v1';
+  var HERO = {
+    club: {
+      title: "Simulateur de tarification — clubs sportifs",
+      sub: document.getElementById('heroSub').textContent,
+      doc: "Simulateur Tarifs Clubs"
+    },
+    indiv: {
+      title: "Simulateur de tarification — accompagnement individuel",
+      sub: "Le catalogue est au plein tarif (sportif professionnel). Le profil du sportif applique une remise en dessous. Ton temps reste facturé à la séance (référence 125-200 €/h), les outils BIPM à la personne testée.",
+      doc: "Simulateur Tarifs Individuels"
+    }
+  };
+  function setView(v, remember){
+    if(v !== 'indiv') v = 'club';
+    document.getElementById('view-club').hidden = (v !== 'club');
+    document.getElementById('view-indiv').hidden = (v !== 'indiv');
+    document.querySelectorAll('.app-tab').forEach(function(b){
+      var on = b.dataset.view === v;
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    document.getElementById('heroTitle').textContent = HERO[v].title;
+    document.getElementById('heroSub').textContent = HERO[v].sub;
+    document.title = HERO[v].doc;
+    if(remember){
+      try{ localStorage.setItem(VIEW_KEY, v); }catch(e){}
+      try{ history.replaceState(null, '', v === 'indiv' ? '#individuel' : '#club'); }catch(e){}
+    }
+  }
+  document.querySelectorAll('.app-tab').forEach(function(b){
+    b.addEventListener('click', function(){ setView(b.dataset.view, true); });
+  });
+  window.addEventListener('hashchange', function(){
+    setView(location.hash === '#individuel' ? 'indiv' : 'club', true);
+  });
+  (function initView(){
+    var v = 'club';
+    if(location.hash === '#individuel') v = 'indiv';
+    else if(location.hash !== '#club'){
+      try{ v = localStorage.getItem(VIEW_KEY) || 'club'; }catch(e){}
+    }
+    setView(v, false);
+  })();
+
+  if(!S){ return; } // les utilitaires du simulateur club ne sont pas chargés
+
+  /* ================= Simulateur individuel ================= */
+  var STORAGE_KEY = 'a4p_pricing_indiv_v1';
+  var nextId = 1;
+
+  var PROFILS = [
+    {v:'jeune',   l:'Jeune / centre de formation / étudiant', pct:75},
+    {v:'amateur', l:'Amateur compétiteur', pct:80},
+    {v:'semipro', l:'Semi-pro / haut niveau', pct:90},
+    {v:'pro',     l:'Professionnel / international (plein tarif)', pct:100}
+  ];
+  var VARIANT_OPTIONS = [ {v:'test',l:'Test + débrief'}, {v:'abonnement',l:'Abonnement outil seul'} ];
+  var BUCKET_OPTIONS = [ {v:'temps',l:'Temps & compétences'}, {v:'produit',l:'Outil / produit'}, {v:'annexe',l:'Forfait annexe'} ];
+  var BUCKET_LABELS = { temps:"Temps & compétences", produit:"Outils BIPM", annexe:"Suivi continu & bilans" };
+
+  var CAT_META = {
+    SEANCES: "Séances individuelles",
+    SUIVI: "Suivi & bilans",
+    OUTILS_BIPM: "Outils BIPM — DPM · RPM · PCM · PAM",
+    CUSTOM: "Ligne libre"
+  };
+  var CAT_ORDER = ['SEANCES','SUIVI'];
+
+  var TEMPLATES = [
+    {id:'i_seance',   cat:'SEANCES', bucket:'temps', label:"Séance individuelle de préparation mentale", unit:"séance", rate:150, hours:1},
+    {id:'i_visio',    cat:'SEANCES', bucket:'temps', label:"Séance courte en visio (30 min)", unit:"séance", rate:80, hours:0.5},
+    {id:'i_debrief',  cat:'SEANCES', bucket:'temps', label:"Débrief individuel de test BIPM", unit:"séance", rate:150, hours:1},
+    {id:'i_prepa',    cat:'SEANCES', bucket:'temps', label:"Préparation d'une échéance clé (compétition, sélection)", unit:"séance", rate:180, hours:1.5},
+    {id:'i_staff',    cat:'SUIVI',   bucket:'temps', label:"Point avec l'entraîneur / le staff", unit:"point", rate:120, hours:0.75},
+    {id:'i_famille',  cat:'SUIVI',   bucket:'temps', label:"Point avec les parents / l'entourage", unit:"point", rate:100, hours:0.75},
+    {id:'i_dispo',    cat:'SUIVI',   bucket:'annexe', label:"Disponibilité continue (tél / WhatsApp)", unit:"par mois", rate:90, hours:1},
+    {id:'i_bilan',    cat:'SUIVI',   bucket:'annexe', label:"Bilan de période (rapport écrit)", unit:"bilan", rate:120, hours:1}
+  ];
+
+  // Tarifs outils : palier « 1 à 9 personnes » du barème club, pour une personne testée.
+  var BIPM_TOOLS = [
+    {id:'dpm', label:"DPM — Diagnostic de Performance Mentale",   hoursTest:1,    hoursAbo:0.1, rateTest:45, rateAbo:15},
+    {id:'rpm', label:"RPM — Régulation et Programmation Mentale", hoursTest:1,    hoursAbo:0.1, rateTest:60, rateAbo:20},
+    {id:'pcm', label:"PCM — Protocole de Contrôle du Mental",     hoursTest:0.75, hoursAbo:0.1, rateTest:50, rateAbo:18},
+    {id:'pam', label:"PAM — Protocole d'Autonomisation Mentale",  hoursTest:0.75, hoursAbo:0.1, rateTest:55, rateAbo:18}
+  ];
+
+  var PACKS = {
+    diagnostic: { name:"Diagnostic", duree:"2 semaines — entrée", lines:[
+      {bipm:'dpm', variant:'test'},
+      {tpl:'i_debrief', qty:1},
+      {tpl:'i_seance', qty:1}
+    ]},
+    sprint: { name:"Programme 6 semaines", duree:"6 semaines — lancement", lines:[
+      {bipm:'dpm', variant:'test'},
+      {tpl:'i_debrief', qty:1},
+      {tpl:'i_seance', qty:4},
+      {tpl:'i_bilan', qty:1}
+    ]},
+    saison: { name:"Programme 3 mois", duree:"3 mois — cœur de gamme", lines:[
+      {bipm:'dpm', variant:'test'},
+      {bipm:'rpm', variant:'test'},
+      {tpl:'i_debrief', qty:2},
+      {tpl:'i_seance', qty:8},
+      {tpl:'i_dispo', qty:3},
+      {tpl:'i_bilan', qty:1}
+    ]},
+    complet: { name:"Programme complet", duree:"6 mois — 4 phases BIPM", lines:[
+      {bipm:'dpm', variant:'test'},
+      {bipm:'rpm', variant:'test'},
+      {bipm:'pcm', variant:'test'},
+      {bipm:'pam', variant:'test'},
+      {tpl:'i_debrief', qty:4},
+      {tpl:'i_seance', qty:14},
+      {tpl:'i_prepa', qty:2},
+      {tpl:'i_staff', qty:1},
+      {tpl:'i_dispo', qty:6},
+      {tpl:'i_bilan', qty:2}
+    ]},
+    vierge: { name:"Sur mesure vierge", duree:"à composer", lines:[] }
+  };
+  var PACK_ORDER = ['diagnostic','sprint','saison','complet'];
+
+  var state = {
+    client: "Exemple — Sportif, Fédérale 1",
+    sport: "Rugby — talonneur",
+    profilKey: 'amateur',
+    facture: '',
+    activePack: 'saison',
+    lines: [],
+    tariffOverrides: {},
+    remiseType: 'pct',
+    remiseValue: 0,
+    seuil: 125,
+    plan: '1x',
+    planMois: 3,
+    savedQuotes: []
+  };
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function labelOf(opts,v){ var o=opts.filter(function(x){return x.v===v;})[0]; return o?o.l:v; }
+  function qtyDisp(q){ return Number.isInteger(q) ? q : Math.round(q*10)/10; }
+
+  function loadStorage(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return;
+      var data = JSON.parse(raw);
+      if(data && typeof data === 'object'){
+        if(data.tariffOverrides) state.tariffOverrides = data.tariffOverrides;
+        if(Array.isArray(data.savedQuotes)) state.savedQuotes = data.savedQuotes;
+      }
+    }catch(e){}
+  }
+  function persist(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify({ tariffOverrides: state.tariffOverrides, savedQuotes: state.savedQuotes })); }
+    catch(e){}
+  }
+  function ovOr(key, def){
+    var ov = state.tariffOverrides[key];
+    return (ov !== undefined && ov !== null && ov !== '') ? Number(ov) : def;
+  }
+
+  function templateById(id){ return TEMPLATES.filter(function(t){return t.id===id;})[0]; }
+  function bipmById(id){ return BIPM_TOOLS.filter(function(t){return t.id===id;})[0]; }
+  function profilPct(key){
+    var p = PROFILS.filter(function(x){return x.v===key;})[0];
+    return ovOr('profil_'+key, p ? p.pct : 100);
+  }
+  function profilMult(){ return profilPct(state.profilKey)/100; }
+  function tplRate(id){ var t = templateById(id); return ovOr(id, t ? t.rate : 0); }
+  function bipmRate(id, variant){
+    var b = bipmById(id);
+    return ovOr(id+'_'+variant, variant==='test' ? b.rateTest : b.rateAbo);
+  }
+
+  function makeLineFromTemplate(tplId, qty){
+    var t = templateById(tplId);
+    return { id:'iline-'+(nextId++), cat:t.cat, bucket:t.bucket, srcTpl:tplId, isBipm:false,
+      label:t.label, frequence:'', nombre: qty!=null?qty:1, duree:t.hours, tarif: tplRate(tplId) };
+  }
+  function makeLineFromBipm(bipmId, variant){
+    var b = bipmById(bipmId);
+    variant = variant || 'test';
+    return { id:'iline-'+(nextId++), cat:'OUTILS_BIPM', bucket:'produit', srcTpl:bipmId, isBipm:true, variant:variant,
+      label:b.label, frequence:'', nombre:1, duree: variant==='test' ? b.hoursTest : b.hoursAbo };
+  }
+  function makeCustomLine(){
+    return { id:'iline-'+(nextId++), cat:'CUSTOM', bucket:'temps', srcTpl:null, isBipm:false,
+      label:'Nouvelle prestation', frequence:'', nombre:1, duree:1, tarif:100 };
+  }
+  function linesFromPack(key){
+    return PACKS[key].lines.map(function(def){
+      return def.tpl ? makeLineFromTemplate(def.tpl, def.qty) : makeLineFromBipm(def.bipm, def.variant);
+    });
+  }
+  function applyPack(key){
+    state.activePack = key;
+    state.lines = linesFromPack(key);
+    render();
+  }
+
+  function computeLine(line){
+    var qty = Math.max(0, Number(line.nombre)||0);
+    if(line.isBipm){
+      var rate = bipmRate(line.srcTpl, line.variant);
+      return { qty:qty, rate:rate, subtotal:rate*qty, hours:Number(line.duree||0)*qty };
+    }
+    return { qty:qty, subtotal:Number(line.tarif||0)*qty, hours:Number(line.duree||0)*qty };
+  }
+  function remiseMontantOf(base){
+    var val = Number(state.remiseValue)||0;
+    if(state.remiseType === 'eur') return Math.min(base, Math.max(0, val));
+    return base * Math.min(50, Math.max(0, val)) / 100;
+  }
+  function computeAll(lines){
+    var out = lines.map(function(l){ return Object.assign({}, l, computeLine(l)); });
+    function bucketOf(b){ return out.filter(function(l){return l.bucket===b;}); }
+    function sum(arr, k){ return arr.reduce(function(s,l){return s+l[k];},0); }
+    var temps = bucketOf('temps'), produit = bucketOf('produit'), annexe = bucketOf('annexe');
+    var tempsSub = sum(temps,'subtotal'), produitSub = sum(produit,'subtotal'), annexeSub = sum(annexe,'subtotal');
+    var brut = tempsSub + produitSub + annexeSub;
+    var mult = profilMult();
+    var apresProfil = brut * mult;
+    var remise = remiseMontantOf(apresProfil);
+    var total = Math.max(0, apresProfil - remise);
+    var effFactor = brut>0 ? total/brut : mult;
+    var tempsHeures = sum(temps,'hours');
+    var produitQty = sum(produit,'qty');
+    return {
+      lines: out, brut:brut, apresProfil:apresProfil, remise:remise, total:total,
+      temps:{lines:temps, subtotal:tempsSub, heures:tempsHeures, taux: tempsHeures>0 ? (tempsSub*effFactor)/tempsHeures : 0},
+      produit:{lines:produit, subtotal:produitSub, qty:produitQty, prixMoyen: produitQty>0 ? (produitSub*effFactor)/produitQty : 0},
+      annexe:{lines:annexe, subtotal:annexeSub}
+    };
+  }
+
+  /* ---------- rendu ---------- */
+  function renderProfilSelect(){
+    var sel = $('iProfil');
+    sel.innerHTML = PROFILS.slice().reverse().map(function(p){
+      var pct = profilPct(p.v);
+      var txt = pct>=100 ? p.l : p.l.replace(' (plein tarif)','') + ' (' + (pct-100) + ' %)';
+      return '<option value="'+p.v+'"'+(p.v===state.profilKey?' selected':'')+'>'+esc(txt)+'</option>';
+    }).join('');
+  }
+
+  function renderPacks(){
+    var wrap = $('iPackCards');
+    wrap.innerHTML = '';
+    PACK_ORDER.concat(['vierge']).forEach(function(key){
+      var pack = PACKS[key];
+      var totals = computeAll(linesFromPack(key));
+      var card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'pack-card' + (state.activePack===key ? ' active' : '');
+      card.innerHTML = '<div class="p-name">'+esc(pack.name)+'</div>' +
+        '<div class="p-duree">'+esc(pack.duree)+'</div>' +
+        '<div class="p-total num">'+fmtEUR(totals.total)+'<small>estimation avec ce catalogue</small></div>';
+      card.addEventListener('click', function(){ applyPack(key); });
+      wrap.appendChild(card);
+    });
+  }
+
+  function renderAddPalette(){
+    var wrap = $('iAddPalette');
+    wrap.innerHTML = '';
+    function block(title, items){
+      var b = document.createElement('div');
+      b.className = 'add-cat';
+      b.innerHTML = '<div class="add-cat-title">'+esc(title)+'</div>';
+      var row = document.createElement('div');
+      row.className = 'add-btn-row';
+      items.forEach(function(it){
+        var btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'add-btn';
+        btn.textContent = '+ ' + it.text;
+        btn.addEventListener('click', function(){ state.lines.push(it.make()); render(); });
+        row.appendChild(btn);
+      });
+      b.appendChild(row);
+      wrap.appendChild(b);
+    }
+    CAT_ORDER.forEach(function(cat){
+      block(CAT_META[cat], TEMPLATES.filter(function(t){return t.cat===cat;}).map(function(t){
+        return { text:t.label, make:function(){ return makeLineFromTemplate(t.id,1); } };
+      }));
+    });
+    block(CAT_META.OUTILS_BIPM, BIPM_TOOLS.map(function(b){
+      return { text:b.id.toUpperCase(), make:function(){ return makeLineFromBipm(b.id,'test'); } };
+    }));
+    block(CAT_META.CUSTOM, [{ text:'Ligne libre (compétence ou outil hors catalogue)', make:makeCustomLine }]);
+  }
+
+  function selectHtml(name, opts, current){
+    return '<select data-field="'+name+'">' + opts.map(function(o){
+      return '<option value="'+o.v+'"'+(o.v===current?' selected':'')+'>'+esc(o.l)+'</option>';
+    }).join('') + '</select>';
+  }
+
+  function renderLines(){
+    var wrap = $('iLinesWrap');
+    wrap.innerHTML = '';
+    if(state.lines.length === 0){
+      wrap.innerHTML = '<div class="lines-empty">Aucune prestation pour l\'instant — choisis un format ci-dessus ou ajoute des lignes une à une.</div>';
+      return;
+    }
+    state.lines.forEach(function(line){
+      var c = computeLine(line);
+      var card = document.createElement('div');
+      card.className = 'line-card' + (line.isBipm ? ' is-bipm' : '');
+      card.dataset.id = line.id;
+
+      var tagsHtml = '';
+      if(line.isBipm){
+        tagsHtml = selectHtml('variant', VARIANT_OPTIONS, line.variant);
+      } else if(line.cat === 'CUSTOM'){
+        tagsHtml = selectHtml('bucket', BUCKET_OPTIONS, line.bucket);
+      }
+      var tarifHtml = line.isBipm
+        ? '<div class="lf readonly-val"><label>Tarif appliqué</label><div class="ro-val num">'+fmtEUR(c.rate)+'</div></div>'
+        : '<div class="lf"><label>Tarif unit. (€)</label><input type="number" min="0" data-field="tarif" value="'+esc(line.tarif)+'"></div>';
+
+      card.innerHTML =
+        '<div class="line-top">' +
+          '<span class="line-cat-badge">'+esc(CAT_META[line.cat])+'</span>' +
+          '<input class="line-label" data-field="label" value="'+esc(line.label)+'">' +
+          '<button class="rm-line" type="button" data-action="remove">Supprimer</button>' +
+        '</div>' +
+        (tagsHtml ? '<div class="line-tags">'+tagsHtml+'</div>' : '') +
+        '<div class="line-fields">' +
+          '<div class="lf"><label>Nombre</label><input type="number" min="0" step="1" data-field="nombre" value="'+esc(line.nombre)+'"></div>' +
+          '<div class="lf"><label>'+(line.isBipm?'Temps admin (h, indicatif)':'Durée (h)')+'</label><input type="number" min="0" step="0.25" data-field="duree" value="'+esc(line.duree)+'"></div>' +
+          tarifHtml +
+          '<div class="lf freq"><label>Fréquence / période</label><input type="text" data-field="frequence" placeholder="ex : 1×/semaine, 6 semaines" value="'+esc(line.frequence||'')+'"></div>' +
+          '<div class="lf sub"><label>Sous-total</label><div class="sub-val num">'+fmtEUR(c.subtotal)+'</div></div>' +
+        '</div>';
+      wrap.appendChild(card);
+    });
+
+    wrap.querySelectorAll('.line-card').forEach(function(cardEl){
+      var id = cardEl.dataset.id;
+      var line = state.lines.filter(function(l){return l.id===id;})[0];
+      cardEl.querySelectorAll('[data-field]').forEach(function(el){
+        var field = el.dataset.field;
+        var isSelect = el.tagName==='SELECT';
+        el.addEventListener(isSelect ? 'change' : 'input', function(){
+          line[field] = el.value;
+          if(field==='variant'){
+            var b = bipmById(line.srcTpl);
+            line.duree = line.variant==='test' ? b.hoursTest : b.hoursAbo;
+          }
+          // on ne reconstruit pas la carte pendant la frappe (le focus serait perdu) : on met à jour le sous-total seulement
+          if(isSelect){ renderLines(); }
+          else {
+            var cc = computeLine(line);
+            var sv = cardEl.querySelector('.sub-val'); if(sv) sv.textContent = fmtEUR(cc.subtotal);
+          }
+          renderSummary();
+          renderPacks();
+        });
+      });
+      cardEl.querySelector('[data-action="remove"]').addEventListener('click', function(){
+        state.lines = state.lines.filter(function(l){return l.id!==id;});
+        render();
+      });
+    });
+  }
+
+  function renderTariffEditor(){
+    var wrap = $('iTariffEditor');
+    wrap.innerHTML = '';
+    function title(t){
+      var d = document.createElement('div'); d.className = 'tariff-group-title'; d.textContent = t; wrap.appendChild(d);
+    }
+    function row(labelHtml, key, def, max){
+      var r = document.createElement('div');
+      r.className = 'tariff-row';
+      var ov = state.tariffOverrides[key];
+      var val = (ov!==undefined && ov!==null && ov!=='') ? ov : def;
+      r.innerHTML = '<span>'+labelHtml+'</span><input type="number" min="0"'+(max?' max="'+max+'"':'')+' data-key="'+key+'" value="'+esc(val)+'">';
+      wrap.appendChild(r);
+    }
+    title('Remise par profil (% du plein tarif)');
+    PROFILS.forEach(function(p){ row(esc(p.l), 'profil_'+p.v, p.pct, 100); });
+    title('Temps & compétences (tarif par unité)');
+    TEMPLATES.forEach(function(t){
+      row(esc(t.label)+' <span style="color:var(--text-faint)">('+esc(t.unit)+')</span>', t.id, t.rate);
+    });
+    title('Outils BIPM (€ par personne testée)');
+    BIPM_TOOLS.forEach(function(b){
+      row(esc(b.id.toUpperCase())+' — Test + débrief', b.id+'_test', b.rateTest);
+      row(esc(b.id.toUpperCase())+' — Abonnement outil seul', b.id+'_abonnement', b.rateAbo);
+    });
+    wrap.querySelectorAll('input[data-key]').forEach(function(el){
+      el.addEventListener('input', function(){
+        state.tariffOverrides[this.dataset.key] = this.value;
+        persist();
+        renderProfilSelect();
+        renderSummary();
+        renderPacks();
+        renderLines();
+      });
+    });
+  }
+
+  function renderSummary(){
+    var totals = computeAll(state.lines);
+    var linesWrap = $('iSummaryLines');
+    linesWrap.innerHTML = '';
+    if(totals.lines.length === 0){
+      linesWrap.innerHTML = '<div class="summary-empty">Aucune prestation sélectionnée pour l\'instant.</div>';
+    } else {
+      totals.lines.forEach(function(l){
+        var d = document.createElement('div');
+        d.className = 'summary-line';
+        d.innerHTML = '<span>'+esc(l.label)+' ×'+qtyDisp(l.qty)+'</span><span class="num">'+fmtEUR(l.subtotal)+'</span>';
+        linesWrap.appendChild(d);
+      });
+    }
+
+    var seuil = Number(state.seuil)||0;
+    var tauxClass = 'taux-bad';
+    if(totals.temps.heures>0){
+      if(totals.temps.taux >= seuil) tauxClass = 'taux-good';
+      else if(totals.temps.taux >= seuil*0.85) tauxClass = 'taux-warn';
+    }
+    $('iBucketBreakdown').innerHTML =
+      '<div class="bucket-block">' +
+        '<div class="bucket-head"><span>'+BUCKET_LABELS.temps+'</span><strong class="num">'+fmtEUR(totals.temps.subtotal)+'</strong></div>' +
+        '<div class="bucket-sub">' +
+          '<span>'+S.fmtH(totals.temps.heures)+' engagées'+(totals.temps.heures>0? ' · <span class="taux-tag '+tauxClass+'">'+fmtEUR(totals.temps.taux)+'/h</span>':'')+'</span>' +
+          '<span class="seuil-inline">plancher visé <input id="iSeuil" type="number" value="'+esc(seuil)+'"> €/h</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="bucket-block">' +
+        '<div class="bucket-head"><span>'+BUCKET_LABELS.produit+'</span><strong class="num">'+fmtEUR(totals.produit.subtotal)+'</strong></div>' +
+        '<div class="bucket-sub"><span>'+totals.produit.qty+' test(s) réalisé(s)'+(totals.produit.qty>0? ' · '+fmtEUR(totals.produit.prixMoyen)+' / test en moyenne':'')+'</span></div>' +
+      '</div>' +
+      '<div class="bucket-block">' +
+        '<div class="bucket-head"><span>'+BUCKET_LABELS.annexe+'</span><strong class="num">'+fmtEUR(totals.annexe.subtotal)+'</strong></div>' +
+        '<div class="bucket-sub"><span>forfaits annexes, hors barème horaire</span></div>' +
+      '</div>';
+    $('iSeuil').addEventListener('input', function(){ state.seuil = this.value; renderSummaryRates(); });
+
+    $('iSumBrut').textContent = fmtEUR(totals.brut);
+    var pct = Math.round((profilMult()-1)*100);
+    $('iProfilPct').textContent = (pct>=0?'+':'')+pct+'%';
+    $('iSumProfil').textContent = fmtEUR(totals.apresProfil);
+    var rr = $('iRemiseAmountRow');
+    if(totals.remise > 0){ rr.hidden = false; $('iSumRemise').textContent = '-' + fmtEUR(totals.remise); }
+    else { rr.hidden = true; }
+    $('iSumTotal').textContent = fmtEUR(totals.total);
+    renderPaymentPlan(totals.total);
+    return totals;
+  }
+  // le seuil modifie seulement la couleur du taux horaire : on ré-affiche sans recréer le champ en cours de saisie
+  function renderSummaryRates(){
+    var totals = computeAll(state.lines);
+    var seuil = Number(state.seuil)||0;
+    var tag = $('iBucketBreakdown').querySelector('.taux-tag');
+    if(!tag) return;
+    var cls = 'taux-bad';
+    if(totals.temps.taux >= seuil) cls = 'taux-good';
+    else if(totals.temps.taux >= seuil*0.85) cls = 'taux-warn';
+    tag.className = 'taux-tag ' + cls;
+  }
+
+  function planLabelOf(total){
+    if(state.plan === '1x') return 'Paiement en 1 fois — ' + fmtEUR(total);
+    if(state.plan === '2x') return 'Paiement en 2 fois — ' + fmtEUR(total/2) + ' / ' + fmtEUR(total/2);
+    if(state.plan === '3x'){ var t=total/3; return 'Paiement en 3 fois — ' + fmtEUR(t) + ' / ' + fmtEUR(t) + ' / ' + fmtEUR(total-2*t); }
+    var mois = Math.max(2, Number(state.planMois)||3);
+    return 'Paiement en ' + mois + ' fois — ' + fmtEUR(total/mois) + ' / mois';
+  }
+
+  function renderPaymentPlan(total){
+    var plans = [ {id:'1x', label:'1×'}, {id:'2x', label:'2×'}, {id:'3x', label:'3×'}, {id:'mensuel', label:'Mensuel'} ];
+    var tabs = $('iPlanTabs');
+    tabs.innerHTML = '';
+    plans.forEach(function(p){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'plan-tab' + (state.plan===p.id?' active':'');
+      b.textContent = p.label;
+      b.addEventListener('click', function(){ state.plan = p.id; renderPaymentPlan(total); });
+      tabs.appendChild(b);
+    });
+    $('iPlanMoisWrap').hidden = state.plan !== 'mensuel';
+    var detail = $('iPlanDetail');
+    if(state.plan === '1x'){
+      detail.innerHTML = '<div><span>Paiement unique à la signature</span><strong class="num">'+fmtEUR(total)+'</strong></div>';
+    } else if(state.plan === '2x'){
+      detail.innerHTML = '<div><span>À la signature</span><strong class="num">'+fmtEUR(total/2)+'</strong></div>' +
+        '<div><span>À mi-parcours</span><strong class="num">'+fmtEUR(total/2)+'</strong></div>';
+    } else if(state.plan === '3x'){
+      var third = total/3;
+      detail.innerHTML = '<div><span>Versement 1</span><strong class="num">'+fmtEUR(third)+'</strong></div>' +
+        '<div><span>Versement 2</span><strong class="num">'+fmtEUR(third)+'</strong></div>' +
+        '<div><span>Versement 3</span><strong class="num">'+fmtEUR(total-2*third)+'</strong></div>';
+    } else {
+      var mois = Math.max(2, Number(state.planMois)||3);
+      detail.innerHTML = '<div><span>'+mois+' prélèvements mensuels</span><strong class="num">'+fmtEUR(total/mois)+' / mois</strong></div>';
+    }
+  }
+
+  function renderSavedQuotes(){
+    var wrap = $('iSavedList');
+    wrap.innerHTML = '';
+    if(state.savedQuotes.length === 0){
+      wrap.innerHTML = '<div class="saved-empty">Aucun devis enregistré pour l\'instant. Les devis restent sur cet appareil, dans ce navigateur.</div>';
+      return;
+    }
+    state.savedQuotes.slice().reverse().forEach(function(q){
+      var row = document.createElement('div');
+      row.className = 'saved-item';
+      row.innerHTML = '<div><div class="si-name">'+esc(q.name)+'</div><div class="si-meta">'+esc(q.date)+' · '+fmtEUR(q.total)+'</div></div>' +
+        '<div class="si-actions"><button type="button" class="load-btn" data-id="'+q.id+'">Charger</button><button type="button" class="del-btn" data-id="'+q.id+'">Supprimer</button></div>';
+      wrap.appendChild(row);
+    });
+    wrap.querySelectorAll('.load-btn').forEach(function(el){
+      el.addEventListener('click', function(){
+        var id = this.dataset.id;
+        var q = state.savedQuotes.filter(function(s){return String(s.id)===id;})[0];
+        if(!q) return;
+        var sn = q.snap;
+        state.client = sn.client; state.sport = sn.sport; state.profilKey = sn.profilKey; state.facture = sn.facture || '';
+        state.activePack = sn.activePack; state.lines = JSON.parse(JSON.stringify(sn.lines));
+        state.remiseType = sn.remiseType || 'pct'; state.remiseValue = sn.remiseValue || 0;
+        state.plan = sn.plan; state.planMois = sn.planMois;
+        syncInputsFromState();
+        render();
+      });
+    });
+    wrap.querySelectorAll('.del-btn').forEach(function(el){
+      el.addEventListener('click', function(){
+        var id = this.dataset.id;
+        state.savedQuotes = state.savedQuotes.filter(function(s){return String(s.id)!==id;});
+        persist();
+        renderSavedQuotes();
+      });
+    });
+  }
+
+  function syncInputsFromState(){
+    $('iClient').value = state.client;
+    $('iSport').value = state.sport;
+    $('iFacture').value = state.facture;
+    $('iRemise').value = state.remiseValue;
+    $('iRemiseType').value = state.remiseType;
+    $('iPlanMois').value = state.planMois;
+    renderProfilSelect();
+  }
+
+  function render(){
+    renderProfilSelect();
+    renderPacks();
+    renderAddPalette();
+    renderLines();
+    renderTariffEditor();
+    renderSummary();
+  }
+
+  /* ---------- copie texte ---------- */
+  function remiseLabel(){
+    var val = Number(state.remiseValue)||0;
+    if(val<=0) return '';
+    return state.remiseType==='eur' ? fmtEUR(val) : (Math.min(50,val))+' %';
+  }
+  function profilLabel(){
+    var p = PROFILS.filter(function(x){return x.v===state.profilKey;})[0];
+    return p ? p.l.replace(' (plein tarif)','') : state.profilKey;
+  }
+  function buildCopyText(){
+    var t = computeAll(state.lines), out = [];
+    out.push('A4P MENTAL — Simulation tarifaire individuelle');
+    out.push(state.client + (state.sport ? ' · ' + state.sport : ''));
+    out.push('Profil : ' + profilLabel() + (state.facture ? ' · Facturé à : ' + state.facture : ''));
+    function section(title, block, withVariant){
+      out.push('');
+      out.push(title);
+      block.lines.forEach(function(l){
+        var tags = [];
+        if(withVariant) tags.push(labelOf(VARIANT_OPTIONS,l.variant));
+        if(l.frequence) tags.push(l.frequence);
+        out.push('- ' + l.label + (tags.length?'  ['+tags.join(' · ')+']':'') + '  ×' + qtyDisp(l.qty) + (l.duree?' · '+l.duree+'h':'') + '  =  ' + fmtEUR(l.subtotal));
+      });
+    }
+    section('TEMPS & COMPÉTENCES', t.temps);
+    out.push('Sous-total temps & compétences : ' + fmtEUR(t.temps.subtotal) + (t.temps.heures>0 ? '  ('+S.fmtH(t.temps.heures)+' · '+fmtEUR(t.temps.taux)+'/h après ajustements)' : ''));
+    section('OUTILS BIPM', t.produit, true);
+    out.push('Sous-total outils BIPM : ' + fmtEUR(t.produit.subtotal));
+    section('SUIVI CONTINU & BILANS', t.annexe);
+    out.push('Sous-total suivi & bilans : ' + fmtEUR(t.annexe.subtotal));
+    out.push('');
+    out.push('Sous-total prestations (plein tarif) : ' + fmtEUR(t.brut));
+    out.push('Après remise profil (' + Math.round((profilMult()-1)*100) + '%) : ' + fmtEUR(t.apresProfil));
+    if(t.remise > 0) out.push('Remise commerciale (' + remiseLabel() + ') : -' + fmtEUR(t.remise));
+    out.push('TOTAL : ' + fmtEUR(t.total));
+    out.push('');
+    out.push(planLabelOf(t.total));
+    return out.join('\n');
+  }
+
+  /* ---------- export PDF ---------- */
+  function buildQuoteData(){
+    var t = computeAll(state.lines);
+    function mapLines(arr, withVariant){
+      return arr.map(function(l){
+        var tags = [];
+        if(withVariant) tags.push(labelOf(VARIANT_OPTIONS,l.variant));
+        if(l.frequence) tags.push(l.frequence);
+        return { label:l.label, qty:qtyDisp(l.qty), tags:tags, subtotal:Math.round(l.subtotal) };
+      });
+    }
+    return {
+      client: state.client || 'Sportif', sport: state.sport, facture: state.facture,
+      date: new Date().toLocaleDateString('fr-FR'),
+      profil_label: profilLabel(), profil_mult: profilMult(),
+      remise_montant: Math.round(t.remise), remise_label: remiseLabel(),
+      brut: Math.round(t.brut), apresProfil: Math.round(t.apresProfil), total: Math.round(t.total),
+      temps:{ subtotal:Math.round(t.temps.subtotal), heures:t.temps.heures, taux:Math.round(t.temps.taux||0), lines:mapLines(t.temps.lines,false) },
+      produit:{ subtotal:Math.round(t.produit.subtotal), qty:t.produit.qty, prixMoyen:Math.round(t.produit.prixMoyen||0), lines:mapLines(t.produit.lines,true) },
+      annexe:{ subtotal:Math.round(t.annexe.subtotal), lines:mapLines(t.annexe.lines,false) },
+      planLabel: planLabelOf(t.total)
+    };
+  }
+
+  function buildPdfDoc(d){
+    var P = S.pdf;
+    var Ctor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+    if(!Ctor) return null;
+    var doc = new Ctor({ unit:'mm', format:'a4' });
+    var page = 1, y = 0;
+    var pdfFmt = S.pdfFmtEUR;
+
+    function startPage(){ S.pdfDrawHeader(doc, d.client); y = P.BAND + 12; }
+    function ensureSpace(h){
+      if(y + h > P.BOTTOM){
+        S.pdfDrawFooter(doc, page);
+        doc.addPage(); page += 1; startPage();
+      }
+    }
+    startPage();
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(17);
+    doc.setTextColor(P.NAVY);
+    doc.text('Proposition tarifaire', P.M, y);
+    y += 7;
+
+    var meta = ['Sportif : ' + (d.client||''), 'Date : ' + d.date];
+    if(d.sport) meta.push('Sport : ' + d.sport);
+    meta.push('Profil : ' + d.profil_label);
+    if(d.facture) meta.push('Facturé à : ' + d.facture);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    doc.setTextColor(P.MUTED);
+    doc.splitTextToSize(meta.join('   ·   '), P.RIGHT-P.M).forEach(function(ln){ doc.text(ln, P.M, y); y += 4.6; });
+    y += 2;
+    doc.setDrawColor(P.AMBER_DEEP); doc.setLineWidth(0.5);
+    doc.line(P.M, y, P.RIGHT, y);
+    y += 7;
+
+    function sectionTable(title, block, kind){
+      var lines = (block && block.lines) || [];
+      if(!lines.length) return;
+      ensureSpace(14);
+      doc.setFont('helvetica','bold'); doc.setFontSize(10.5);
+      doc.setTextColor(P.NAVY);
+      doc.text(title, P.M, y);
+      y += 6;
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.6);
+      doc.setTextColor(P.FAINT);
+      doc.text('Prestation', P.LABEL_X, y);
+      doc.text('Qté', P.QTY_X, y);
+      doc.text('Montant', P.AMT_RIGHT, y, { align:'right' });
+      y += 1.5;
+      doc.setDrawColor(P.NAVY); doc.setLineWidth(0.45);
+      doc.line(P.M, y, P.RIGHT, y);
+      y += 5;
+
+      lines.forEach(function(l){
+        var labelLines = doc.splitTextToSize(l.label, P.LABEL_W);
+        var tagText = (l.tags||[]).filter(Boolean).join(' · ');
+        ensureSpace(labelLines.length*4 + (tagText?3.6:0) + 4.5);
+        var rowTop = y, ly = rowTop;
+        doc.setFont('helvetica','normal'); doc.setFontSize(8.7);
+        doc.setTextColor(P.INK);
+        labelLines.forEach(function(ln){ doc.text(ln, P.LABEL_X, ly); ly += 4; });
+        if(tagText){
+          doc.setFontSize(7.6); doc.setTextColor(P.FAINT);
+          doc.text(tagText, P.LABEL_X, ly);
+          ly += 3.6;
+        }
+        doc.setFont('helvetica','normal'); doc.setFontSize(8.7);
+        doc.setTextColor(P.INK);
+        doc.text(String(l.qty), P.QTY_X, rowTop);
+        doc.setFont('helvetica','bold');
+        doc.text(pdfFmt(l.subtotal), P.AMT_RIGHT, rowTop, { align:'right' });
+        var rowBottom = Math.max(ly-4+1.5, rowTop+2.5);
+        doc.setDrawColor(P.LINE); doc.setLineWidth(0.2);
+        doc.line(P.M, rowBottom+1.6, P.RIGHT, rowBottom+1.6);
+        y = rowBottom + 5.2;
+      });
+
+      ensureSpace(9);
+      doc.setFont('helvetica','bold'); doc.setFontSize(9);
+      doc.setTextColor(P.NAVY);
+      doc.text('Sous-total', P.LABEL_X, y+3);
+      doc.text(pdfFmt(block.subtotal), P.AMT_RIGHT, y+3, { align:'right' });
+      y += 7.5;
+
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.8);
+      doc.setTextColor(P.FAINT);
+      if(kind==='temps' && block.heures){
+        doc.text(String(Math.round(block.heures*10)/10).replace('.',',') + ' h engagées après ajustements · ' + pdfFmt(block.taux) + '/h effectif', P.M, y);
+        y += 6;
+      } else if(kind==='produit' && block.qty){
+        var tx = block.qty + ' test(s) réalisé(s)';
+        if(block.prixMoyen) tx += ' · ' + pdfFmt(block.prixMoyen) + ' / test en moyenne';
+        doc.text(tx, P.M, y);
+        y += 6;
+      } else { y += 2; }
+    }
+
+    sectionTable('Temps & compétences', d.temps, 'temps');
+    sectionTable('Outils BIPM', d.produit, 'produit');
+    sectionTable('Suivi continu & bilans', d.annexe, 'annexe');
+
+    ensureSpace(28);
+    doc.setDrawColor(P.NAVY); doc.setLineWidth(0.5);
+    doc.line(P.M, y, P.RIGHT, y);
+    y += 6;
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    doc.setTextColor(P.INK);
+    doc.text('Sous-total prestations (plein tarif)', P.M, y);
+    doc.text(pdfFmt(d.brut), P.AMT_RIGHT, y, { align:'right' });
+    y += 6;
+    var pct = Math.round((d.profil_mult-1)*100);
+    doc.text('Remise profil (' + (pct>=0?'+':'') + pct + ' %)', P.M, y);
+    doc.text(pdfFmt(d.apresProfil), P.AMT_RIGHT, y, { align:'right' });
+    y += 6;
+    if(d.remise_montant > 0){
+      doc.text('Remise commerciale (' + d.remise_label + ')', P.M, y);
+      doc.text('-' + pdfFmt(d.remise_montant), P.AMT_RIGHT, y, { align:'right' });
+      y += 6;
+    }
+    y += 2;
+
+    ensureSpace(20);
+    doc.setFillColor(P.NAVY);
+    doc.roundedRect(P.M, y, P.RIGHT-P.M, 15, 1.5, 1.5, 'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(12);
+    doc.setTextColor('#FFFFFF');
+    doc.text('TOTAL À FACTURER', P.M+5, y+9.5);
+    doc.setFontSize(15); doc.setTextColor(P.AMBER);
+    doc.text(pdfFmt(d.total), P.RIGHT-5, y+9.5, { align:'right' });
+    y += 20;
+
+    if(d.planLabel){
+      ensureSpace(6);
+      doc.setFont('helvetica','normal'); doc.setFontSize(7.8);
+      doc.setTextColor(P.FAINT);
+      doc.text(d.planLabel, P.M, y);
+      y += 8;
+    }
+
+    ensureSpace(4);
+    doc.setDrawColor(P.AMBER_DEEP); doc.setLineWidth(0.5);
+    doc.line(P.M, y, P.RIGHT, y);
+    y += 8;
+
+    ensureSpace(46);
+    doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.setTextColor(P.NAVY);
+    doc.text('BON POUR ACCORD', P.M, y);
+    y += 5.5;
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.8);
+    doc.setTextColor(P.FAINT);
+    var bpa = "Devis valable 30 jours à compter de sa date d'émission. La mention manuscrite « Bon pour accord » vaut acceptation des prestations et tarifs décrits ci-dessus.";
+    doc.splitTextToSize(bpa, P.RIGHT-P.M).forEach(function(ln){ doc.text(ln, P.M, y); y += 3.6; });
+    y += 4;
+
+    var colGap = 5, leftX = P.M, rightX = P.M + (P.RIGHT-P.M-colGap)/2 + colGap;
+    var rowsL = [
+      ['Pour le sportif', true],
+      ['Nom et prénom : ____________________________', false],
+      ['Fait à : __________________  Le : __________', false],
+      ['Signature (représentant légal si mineur) :', false]
+    ];
+    var rowsR = [
+      ['Pour A4P Mental', true],
+      ['Alexandre Griffet — Architecte Mental', false],
+      ['Fait à Puteaux, le ' + d.date, false],
+      ['Signature :', false]
+    ];
+    function drawRows(rows, x){
+      var yy = y;
+      rows.forEach(function(row, i){
+        doc.setFont('helvetica', row[1]?'bold':'normal');
+        doc.setFontSize(row[1]?9:8.5);
+        doc.setTextColor(row[1]?P.NAVY:P.MUTED);
+        doc.text(row[0], x, yy);
+        yy += (i === rows.length-2) ? 10 : 6;
+      });
+    }
+    drawRows(rowsL, leftX);
+    drawRows(rowsR, rightX);
+
+    S.pdfDrawFooter(doc, page);
+    return doc;
+  }
+
+  function generatePdf(){
+    var feedback = $('iCopyFeedback');
+    var btn = $('iEditDevis');
+    if(state.lines.length === 0){
+      feedback.textContent = 'Ajoutez au moins une prestation avant d\'éditer le devis.';
+      setTimeout(function(){ feedback.textContent=''; }, 3500);
+      return;
+    }
+    btn.disabled = true;
+    var prev = btn.textContent;
+    btn.textContent = 'Génération du PDF…';
+    setTimeout(function(){
+      try{
+        var d = buildQuoteData();
+        var doc = buildPdfDoc(d);
+        if(!doc){ feedback.textContent = 'Le générateur PDF ne s\'est pas chargé — vérifiez la connexion et réessayez.'; return; }
+        S.offerPdfDownload(doc.output('blob'), 'Devis A4P Mental - ' + S.safeFileName(d.client) + '.pdf', feedback);
+      }catch(e){
+        feedback.textContent = 'Erreur lors de la génération du PDF.';
+      }finally{
+        btn.disabled = false;
+        btn.textContent = prev;
+      }
+    }, 30);
+  }
+
+  /* ---------- câblage ---------- */
+  function wire(){
+    $('iClient').addEventListener('input', function(){ state.client = this.value; });
+    $('iSport').addEventListener('input', function(){ state.sport = this.value; });
+    $('iFacture').addEventListener('input', function(){ state.facture = this.value; });
+    $('iProfil').addEventListener('change', function(){ state.profilKey = this.value; renderSummary(); renderPacks(); });
+    $('iRemise').addEventListener('input', function(){ state.remiseValue = this.value; renderSummary(); });
+    $('iRemiseType').addEventListener('change', function(){ state.remiseType = this.value; renderSummary(); });
+    $('iPlanMois').addEventListener('input', function(){ state.planMois = this.value; renderSummary(); });
+
+    $('iResetTariffs').addEventListener('click', function(){
+      state.tariffOverrides = {};
+      persist();
+      render();
+    });
+
+    $('iCopySummary').addEventListener('click', function(){
+      var text = buildCopyText();
+      var feedback = $('iCopyFeedback');
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){
+          feedback.textContent = 'Récapitulatif copié dans le presse-papiers.';
+          setTimeout(function(){ feedback.textContent=''; }, 3000);
+        }).catch(function(){ S.fallbackSelect(text, feedback); });
+      } else { S.fallbackSelect(text, feedback); }
+    });
+
+    $('iEditDevis').addEventListener('click', generatePdf);
+
+    $('iSaveQuote').addEventListener('click', function(){
+      var nameInput = $('iSaveName');
+      var name = nameInput.value.trim() || state.client || 'Devis sans nom';
+      var totals = renderSummary();
+      var snap = {
+        client: state.client, sport: state.sport, profilKey: state.profilKey, facture: state.facture,
+        activePack: state.activePack, lines: state.lines,
+        remiseType: state.remiseType, remiseValue: state.remiseValue, plan: state.plan, planMois: state.planMois
+      };
+      state.savedQuotes.push({
+        id: Date.now(), name: name, date: new Date().toLocaleDateString('fr-FR'),
+        total: totals.total, snap: JSON.parse(JSON.stringify(snap))
+      });
+      persist();
+      nameInput.value = '';
+      renderSavedQuotes();
+    });
+  }
+
+  loadStorage();
+  wire();
   applyPack('saison');
   renderSavedQuotes();
 })();
